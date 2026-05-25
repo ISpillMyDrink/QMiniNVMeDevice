@@ -11,6 +11,13 @@
 
 #include "stdint.h"
 
+#ifndef __cplusplus
+#include <assert.h>
+#ifndef static_assert
+#define static_assert _Static_assert
+#endif
+#endif
+
 #pragma once
 
 // Some useful NVME admin opcodes...
