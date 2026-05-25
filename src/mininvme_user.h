@@ -70,6 +70,27 @@ int mininvme_get_timeout(mininvme_device_t *device, int *value);
 int mininvme_scan_devices(char **out_paths, size_t max_paths, size_t *out_count);
 void mininvme_free_device_list(char **paths, size_t count);
 
+void mininvme_controller_model_name(const nvme_controller_info_t *info, char *out, size_t out_size);
+void mininvme_controller_firmware_revision(const nvme_controller_info_t *info, char *out, size_t out_size);
+void mininvme_controller_serial_number(const nvme_controller_info_t *info, char *out, size_t out_size);
+uint32_t mininvme_controller_namespace_count(const nvme_controller_info_t *info);
+uint32_t mininvme_controller_max_data_transfer_size(const nvme_controller_info_t *info);
+uint64_t mininvme_controller_total_capacity(const nvme_controller_info_t *info);
+uint64_t mininvme_controller_unallocated_capacity(const nvme_controller_info_t *info);
+uint16_t mininvme_namespace_sector_size(const nvme_namespace_info_t *info);
+
+uint16_t mininvme_health_composite_temperature(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_data_units_read(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_data_units_written(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_host_read_commands(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_host_write_commands(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_controller_busy_time(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_power_cycles(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_power_on_hours(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_unsafe_shutdowns(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_media_and_data_integrity_errors(const nvme_log_page_health_information_t *info);
+uint64_t mininvme_health_number_of_error_information_log_entries(const nvme_log_page_health_information_t *info);
+
 const char *mininvme_error_to_string(mininvme_error_t error);
 const char *mininvme_status_code_type_to_string(int type);
 const char *mininvme_status_code_to_string(int type, int code);

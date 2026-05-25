@@ -527,3 +527,171 @@ const char *mininvme_status_code_to_string(int type, int code)
 
     return "Unknown status code";
 }
+
+static void copy_trimmed_ascii(const char *src, size_t src_len, char *out, size_t out_size)
+{
+    size_t start = 0;
+    size_t end = src_len;
+    size_t len;
+
+    if (out == NULL || out_size == 0)
+        return;
+
+    while (start < src_len && src[start] == ' ')
+        start++;
+
+    while (end > start && src[end - 1] == ' ')
+        end--;
+
+    len = end - start;
+    if (len >= out_size)
+        len = out_size - 1;
+
+    if (len > 0)
+        memcpy(out, src + start, len);
+    out[len] = '\0';
+}
+
+void mininvme_controller_model_name(const nvme_controller_info_t *info, char *out, size_t out_size)
+{
+    if (info == NULL || out == NULL || out_size == 0)
+        return;
+    copy_trimmed_ascii(info->mn, sizeof(info->mn), out, out_size);
+}
+
+void mininvme_controller_firmware_revision(const nvme_controller_info_t *info, char *out, size_t out_size)
+{
+    if (info == NULL || out == NULL || out_size == 0)
+        return;
+    copy_trimmed_ascii(info->fr, sizeof(info->fr), out, out_size);
+}
+
+void mininvme_controller_serial_number(const nvme_controller_info_t *info, char *out, size_t out_size)
+{
+    if (info == NULL || out == NULL || out_size == 0)
+        return;
+    copy_trimmed_ascii(info->sn, sizeof(info->sn), out, out_size);
+}
+
+uint32_t mininvme_controller_namespace_count(const nvme_controller_info_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->nn;
+}
+
+uint32_t mininvme_controller_max_data_transfer_size(const nvme_controller_info_t *info)
+{
+    if (info == NULL)
+        return 0;
+
+    if (info->mdts >= 20)
+        return 0;
+
+    return 4096U * (1U << info->mdts);
+}
+
+uint64_t mininvme_controller_total_capacity(const nvme_controller_info_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->tnvmcap_lo;
+}
+
+uint64_t mininvme_controller_unallocated_capacity(const nvme_controller_info_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->unvmcap_lo;
+}
+
+uint16_t mininvme_namespace_sector_size(const nvme_namespace_info_t *info)
+{
+    uint8_t flbas;
+
+    if (info == NULL)
+        return 0;
+
+    flbas = info->flbas & 0x0f;
+    if (flbas >= 16)
+        return 0;
+
+    return (uint16_t)(1U << info->lbaf[flbas].lbads);
+}
+
+uint16_t mininvme_health_composite_temperature(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return (uint16_t)(info->ct[0] | (info->ct[1] << 8));
+}
+
+uint64_t mininvme_health_data_units_read(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->dur_lo;
+}
+
+uint64_t mininvme_health_data_units_written(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->duw_lo;
+}
+
+uint64_t mininvme_health_host_read_commands(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->hrc_lo;
+}
+
+uint64_t mininvme_health_host_write_commands(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->hwc_lo;
+}
+
+uint64_t mininvme_health_controller_busy_time(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->cbt_lo;
+}
+
+uint64_t mininvme_health_power_cycles(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->pc_lo;
+}
+
+uint64_t mininvme_health_power_on_hours(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->poh_lo;
+}
+
+uint64_t mininvme_health_unsafe_shutdowns(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->us_lo;
+}
+
+uint64_t mininvme_health_media_and_data_integrity_errors(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->mdie_lo;
+}
+
+uint64_t mininvme_health_number_of_error_information_log_entries(const nvme_log_page_health_information_t *info)
+{
+    if (info == NULL)
+        return 0;
+    return info->neile_lo;
+}
