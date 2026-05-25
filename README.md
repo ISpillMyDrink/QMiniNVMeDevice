@@ -1,56 +1,147 @@
-# QMiniNVMeDevice
+# QMiniNVMeDevice (C-only userspace library)
 
-## Description
-This is a subclass of the MiniPCIDevice library designed to communicate with NVMe devices over the MiniNVMe kernel module.
+This repository provides a pure C userspace interface for the `mininvme` kernel driver.
+
+The project is now command-line oriented only (no Qt GUI app).
+
+## Goals
+
+- Provide a small C library for NVMe operations via `mininvme` ioctls.
+- Keep API surface stable and embeddable in other C/C++ applications.
+- Expose deterministic error handling for ioctl, timeout, and NVMe completion status.
+- Provide a CLI example that exercises the main workflow.
 
 ## Features
-- General device info (ID and namespaces);
-- Read and Write;
-- Basic error handling;
-- Timeout control;
-- Controller reset;
 
-## Pure C userspace library
+- Device discovery for `/dev/mininvme*`
+- Device open/close lifecycle management
+- Controller version/state/info retrieval
+- Namespace info retrieval
+- SMART / health log page retrieval
+- LBA read/write operations
+- Controller reset
+- Timeout set/get
+- Error translation to readable strings
+- Convenience helpers for parsing controller/namespace/health structures
 
-To make the userspace program reusable from non-Qt projects, a pure C API is now provided:
+## Dependencies
 
-- `src/mininvme_user.h`
-- `src/mininvme_user.c`
+This library requires userspace headers from the `mininvme` driver:
 
-This API mirrors the same mininvme ioctl flow used by `QMiniNVMeDevice`:
+- `mininvme/ioctl.h` (or `../../mininvme/ioctl.h` fallback)
 
-- open/close and scan `/dev/mininvme*`;
-- controller version/state/info;
-- namespace info and health log page;
-- read/write by LBA;
-- timeout set/get and controller reset;
-- NVMe status decoding for device errors.
+The library also ships NVMe data structure definitions in:
 
-### Dependencies
+- `src/QMiniNVMeCommon.h`
 
-The C API expects the mininvme driver userspace headers to be available, especially:
+## Build
 
-- `mininvme/ioctl.h`
+### Build library + CLI example
 
-It also uses `src/QMiniNVMeCommon.h` for NVMe data structures.
+```bash
+make MININVME_INCLUDE=/absolute/path/to/mininvme
+```
 
-### Building in another program
+Artifacts:
 
-Compile and link the source directly with your project (example):
+- Static library: `build/lib/libmininvme_user.a`
+- CLI example: `build/bin/mininvme_cli_example`
+
+### Clean build artifacts
+
+```bash
+make clean
+```
+
+### Compile directly in another project
 
 ```bash
 cc -std=c11 -I/path/to/mininvme -I/path/to/QMiniNVMeDevice/src \
-   your_app.c /path/to/QMiniNVMeDevice/src/mininvme_user.c -o your_app
+  your_app.c /path/to/QMiniNVMeDevice/src/mininvme_user.c -o your_app
 ```
 
-### Minimal usage sketch
+## Command-line usage
 
-1. Initialize `mininvme_device_t` with `mininvme_device_init`.
-2. Open `/dev/mininvmeX` with `mininvme_open`.
-3. Call read/info/admin helpers as needed.
-4. On failure, inspect `mininvme_last_error`, `mininvme_last_errno`, and `mininvme_last_nvme_error`.
-5. Close with `mininvme_close`.
+The repository includes:
 
-See MiniNVMeTestApp for more details.
+- `examples/mininvme_cli_example.c`
 
-![](/img/screenshot.png)
+Run:
+
+```bash
+./build/bin/mininvme_cli_example /dev/mininvme0
+```
+
+It prints:
+
+- Controller version
+- Model/firmware/serial
+- Namespace summary
+- Selected health metrics
+
+## API overview (`src/mininvme_user.h`)
+
+### Device lifecycle
+
+- `mininvme_device_init`
+- `mininvme_open`
+- `mininvme_close`
+- `mininvme_is_open`
+
+### Error access
+
+- `mininvme_last_error`
+- `mininvme_last_errno`
+- `mininvme_last_nvme_error`
+- `mininvme_error_to_string`
+- `mininvme_status_code_type_to_string`
+- `mininvme_status_code_to_string`
+
+### Device/admin commands
+
+- `mininvme_controller_version`
+- `mininvme_controller_state`
+- `mininvme_controller_info`
+- `mininvme_namespace_info`
+- `mininvme_log_page_health_info`
+- `mininvme_controller_reset`
+- `mininvme_set_timeout`
+- `mininvme_get_timeout`
+
+### Data I/O
+
+- `mininvme_read`
+- `mininvme_write`
+
+### Discovery helpers
+
+- `mininvme_scan_devices`
+- `mininvme_free_device_list`
+
+### Structure parsing helpers
+
+- Controller fields: model, firmware, serial, namespace count, max transfer, capacities
+- Namespace fields: active LBA format / sector size
+- Health fields: temperature and major counters
+
+## Error model
+
+Each API call returns `0` on success and `-1` on failure.
+
+Failure details:
+
+- `mininvme_last_error`:
+  - `MININVME_ERROR_INVALID_ARGUMENT`
+  - `MININVME_ERROR_OPEN`
+  - `MININVME_ERROR_CLOSE`
+  - `MININVME_ERROR_IOCTL`
+  - `MININVME_ERROR_TIMEOUT`
+  - `MININVME_ERROR_DEVICE`
+- `mininvme_last_errno` for POSIX error context
+- `mininvme_last_nvme_error` when `MININVME_ERROR_DEVICE` is set
+
+## Project layout (detailed)
+
+See:
+
+- `docs/PROJECT_LAYOUT.md`
