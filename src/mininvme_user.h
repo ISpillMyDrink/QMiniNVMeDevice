@@ -4,7 +4,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(__has_include)
+#if __has_include(<mininvme/ioctl.h>)
+#include <mininvme/ioctl.h>
+#elif __has_include("../../mininvme/ioctl.h")
 #include "../../mininvme/ioctl.h"
+#else
+#error "Cannot find mininvme/ioctl.h. Add the mininvme userspace headers to your include path."
+#endif
+#else
+#include "../../mininvme/ioctl.h"
+#endif
 #include "QMiniNVMeCommon.h"
 
 #ifdef __cplusplus
